@@ -7,7 +7,9 @@ extern motor ML;
 extern motor MR;
 extern motor BL;
 extern motor BR;
-extern motor catapult;
+extern motor catapultLeft;
+extern motor catapultRight;
+extern motor_group catapult;
 extern motor intake;
 extern motor rollers;
 
@@ -17,7 +19,7 @@ extern inertial Inertial;
 
 extern limit cata_limit;
 
-extern pneumatics Endgame;
+extern pneumatics expansion;
 extern pneumatics CataPiston;
 
 /**

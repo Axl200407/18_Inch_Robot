@@ -332,31 +332,56 @@ void drive(float desired, float speed){
 
 bool toggle = true;
 bool toggle1 = true;
-void PistonToggle1(){
-  if (toggle){
-	  Endgame.open();
-	  toggle = false;
-  }else if (toggle == false){
-	  Endgame.close();
-	  toggle = true;
+// void PistonToggle1(){
+//   if (toggle){
+// 	  Endgame.open();
+// 	  toggle = false;
+//   }else if (toggle == false){
+// 	  Endgame.close();
+// 	  toggle = true;
+//   }
+// }
+// void PistonToggle2(){
+//   if (toggle1){
+// 	  CataPiston.open();
+// 	  toggle1 = false;
+//   }else if (toggle1 == false){
+// 	  CataPiston.close();
+// 	  toggle1 = true;
+//   }
+// }
+bool armset = true;
+void retractCatapult(){
+  armset=false;
+  if(!armset && !cata_limit.pressing()){
+    catapult.spin(fwd, 100, pct);
   }
-}
-void PistonToggle2(){
-  if (toggle1){
-	  CataPiston.open();
-	  toggle1 = false;
-  }else if (toggle1 == false){
-	  CataPiston.close();
-	  toggle1 = true;
+  else{
+    catapult.stop(hold);
+    armset=true;
   }
 }
 
-
-void reload(){
-  while(!cata_limit.pressing()){
-      catapult.spin(forward, 100, pct);
-    }
+void launchCatapult(){
+  while(cata_limit.pressing()){
+    catapult.spin(fwd, 100, pct);
+  }
+  //catapult.stop(hold);
+  wait(500,msec);
+  retractCatapult();
 }
+
+void expansionButton(){
+  expansion.close();
+  //wait(250, msec);
+  //expansion.open();
+}
+
+// void reload(){
+//   while(!cata_limit.pressing()){
+//       catapult.spin(forward, 100, pct);
+//     }
+// }
 
 void pre_auton(void) {
   // Initializing Robot Configuration. DO NOT REMOVE!
@@ -367,13 +392,16 @@ void pre_auton(void) {
     Brain.Screen.print("Calibrating");
   }
   Brain.Screen.clearScreen();
+  retractCatapult();
 }
 
 
-
+float inch =12/5;
 
 void autonomous(void) {
-  turnTo(90, 50);
+  drive(12, 100);
+  //turnTo(90, 50);
+
 } 
 
 /*---------------------------------------------------------------------------*/
@@ -385,57 +413,43 @@ void autonomous(void) {
 /*                                                                           */
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
-
 void usercontrol(void) {
-  Controller1.ButtonA.pressed(PistonToggle1);
-  Controller1.ButtonDown.pressed(PistonToggle2);
   while (true){
-    FL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()/2), pct);
-    ML.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()/2), pct);
-    BL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()/2), pct);
-    FR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()/2), pct);
-    MR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()/2), pct);
-    BR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()/2), pct);
+    FL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.75), pct);
+    ML.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.75), pct);
+    BL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.75), pct);
+    FR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.75), pct);
+    MR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.75), pct);
+    BR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.75), pct);
 
+    //catapult control
+    // Controller1.ButtonL2.pressed(retractCatapult);
+    // Controller1.ButtonL1.pressed(launchCatapult);
 
-    //Launch catapult. Right Trigger
-    if (Controller1.ButtonL2.pressing()){
-      catapult.spin(fwd, 100, pct);
-    } else if (!cata_limit.pressing()){
-      catapult.spin(fwd, 50, pct);
-    } else {
-      catapult.stop(hold);
-    }
-
-    if(Controller1.ButtonRight.pressing()){
-      catapult.spin(forward, 100, pct);
-      CataPiston.open();
-      wait(250,msec);
-      CataPiston.close();
-      while(!cata_limit.pressing()){
-        catapult.spin(forward, 100, pct);
-      }
-      catapult.stop(hold);
-    }
-
-    //Spin rollers. Right Bumper
-    if (Controller1.ButtonL1.pressing()){
-      rollers.spin(fwd, 100, pct);
-    } else {
-      rollers.stop(coast);
-    }
-
-
-    //Spin Intake. Both Left Buttons.
-    if (Controller1.ButtonR2.pressing()){
-      intake.spin(fwd, -100, pct);
-    } else if (Controller1.ButtonR1.pressing()){
+    //Spin intake. Right Bumper
+    if (Controller1.ButtonR1.pressing()){
       intake.spin(fwd, 100, pct);
-    } else {
+    } else if(Controller1.ButtonR2.pressing()){
+      intake.spin(fwd, -100, pct);
+    }
+    else{
       intake.stop(hold);
     }
 
-    wait(20,msec);
+
+    //Spin roller. x and B.
+    if (Controller1.ButtonX.pressing()){
+      rollers.spin(fwd, 100, pct);
+    } else if (Controller1.ButtonB.pressing()){
+      rollers.spin(fwd, -100, pct);
+    } else {
+      rollers.stop(hold);
+    }
+
+    //expansion
+    Controller1.ButtonDown.pressed(expansionButton);
+
+    //wait(5,msec);
   }
 }
 
@@ -503,7 +517,7 @@ int main() {
 
     Brain.Screen.setCursor(1, 1);
     Brain.Screen.print(Inertial.heading(degrees)); */
-    wait(20, msec);
+    wait(10, msec);
     //Brain.Screen.clearScreen();
   }
 }
