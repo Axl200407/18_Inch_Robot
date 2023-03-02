@@ -203,9 +203,13 @@ void turnTo(float desired_heading, unsigned int speed) {
     BR.stop(hold);
 }
 
-float kP = .3;//.2
-float kI = 1;
-float kD = 2.5;
+// float kP = .3;//.2
+// float kI = 1;
+// float kD = 2.5;
+// float kT = 0;
+float kP = .05;//.2
+float kI = .23;
+float kD = 15;
 float kT = 0;
 
 float Proportion;
@@ -231,7 +235,7 @@ void drive(float desired, float speed){
   Derivative = 0;
 
 
-  desired = desired*(360/(5.3*M_PI));
+  desired = desired*(360/(1.7*M_PI));
 
   error = desired - FL.position(degrees) + FR.position(degrees)/(-2);
 
@@ -242,7 +246,7 @@ void drive(float desired, float speed){
   BL.setPosition(0, degrees);
   BR.setPosition(0, degrees);
   int counter = 0;
-  while ((fabs(error) >= 10) || (fabs(FR.velocity(pct)) >= 1 && counter != 1)) {
+  while ((fabs(error) >= 20) || (fabs(FR.velocity(pct)) >= 1 && counter != 1)) {
     counter = 1;
 
     error = desired - FL.position(degrees) + FR.position(degrees)/(-2);
@@ -311,9 +315,9 @@ void drive(float desired, float speed){
     Brain.Screen.setCursor(4, 15);
     Brain.Screen.print((Turn * kT));
     Brain.Screen.setCursor(5, 1);
-    Brain.Screen.print("right speed: ");
+    Brain.Screen.print("Integrak: ");
     Brain.Screen.setCursor(5, 15);
-    Brain.Screen.print((right_speed/100) * speed);
+    Brain.Screen.print((Integral));
     Brain.Screen.setCursor(6, 1);
     Brain.Screen.print("left speed: ");
     Brain.Screen.setCursor(7, 12);
@@ -354,17 +358,17 @@ bool armset = true;
 void retractCatapult(){
   armset=false;
   if(!armset && !cata_limit.pressing()){
-    catapult.spin(fwd, 100, pct);
+    catapultLeft.spin(fwd, 100, pct);
   }
   else{
-    catapult.stop(hold);
+    catapultLeft.stop(hold);
     armset=true;
   }
 }
 
 void launchCatapult(){
   while(cata_limit.pressing()){
-    catapult.spin(fwd, 100, pct);
+    catapultLeft.spin(fwd, 100, pct);
   }
   //catapult.stop(hold);
   wait(500,msec);
@@ -392,16 +396,48 @@ void pre_auton(void) {
     Brain.Screen.print("Calibrating");
   }
   Brain.Screen.clearScreen();
-  retractCatapult();
+  //retractCatapult();
 }
 
 
-float inch =12/5;
+float inch =12/4;
 
 void autonomous(void) {
-  drive(12, 100);
-  //turnTo(90, 50);
-
+  Inertial.setHeading(180, deg);
+  drive(29.75, 30);
+  turnTo(42, 15);
+  wait(1000, msec);
+  drive(-34.2, 40);
+  turnTo(0, 20);
+  wait(1000, msec);
+  drive(-3.75,60);
+  rollers.spin(fwd, 500, pct);
+  wait(150, msec);
+  rollers.stop(coast);
+  drive(2.75,60);
+  turnTo(42, 15);//15
+  drive(67, 30);
+  turnTo(-43, 15);//15
+  wait(500, msec);
+  drive(-6, 60);
+  while (!cata_limit.pressing()){
+    catapult.spin(fwd, 100, pct);
+  }
+  catapult.stop(hold);
+  wait(500, msec);
+  catapult.spin(fwd, 50, pct);
+  wait(500, msec);
+  catapult.stop(hold);
+  while (!cata_limit.pressing()){
+    catapult.spin(fwd, 100, pct);
+  }
+  catapult.stop(hold);
+  intake.spin(fwd, 100, pct);
+  wait(1500, msec);
+  intake.stop(coast);
+  catapult.spin(fwd, 50, pct);
+  wait(500, msec);
+  catapult.stop(hold);
 } 
 
 /*---------------------------------------------------------------------------*/
@@ -415,16 +451,33 @@ void autonomous(void) {
 /*---------------------------------------------------------------------------*/
 void usercontrol(void) {
   while (true){
-    FL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.75), pct);
-    ML.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.75), pct);
-    BL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.75), pct);
-    FR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.75), pct);
-    MR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.75), pct);
-    BR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.75), pct);
+    // if(Controller1.Axis1.value()>20){
+      FL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.5), pct);
+      ML.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.5), pct);
+      BL.spin(fwd, (Controller1.Axis3.value() + Controller1.Axis1.value()*0.5), pct);
+      FR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.5), pct);
+      MR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.5), pct);
+      BR.spin(fwd, (Controller1.Axis3.value() - Controller1.Axis1.value()*0.5), pct);
+    // }else{
+    //   FL.spin(fwd, Controller1.Axis3.value(), pct);
+    //   ML.spin(fwd, Controller1.Axis3.value(), pct);
+    //   BL.spin(fwd, Controller1.Axis3.value(), pct);
+    //   FR.spin(fwd, Controller1.Axis3.value(), pct);
+    //   MR.spin(fwd, Controller1.Axis3.value(), pct);
+    //   BR.spin(fwd, Controller1.Axis3.value(), pct);
+    // }
+    
 
     //catapult control
-    // Controller1.ButtonL2.pressed(retractCatapult);
-    // Controller1.ButtonL1.pressed(launchCatapult);
+    if (Controller1.ButtonL1.pressing()){
+      catapult.spin(fwd, 100, pct);
+    } else if (!cata_limit.pressing()){
+      catapult.spin(fwd, 50, pct);
+    } else {
+      catapult.stop(hold);
+    }
+    //Controller1.ButtonL2.pressed(retractCatapult);
+    //Controller1.ButtonL1.pressed(launchCatapult);
 
     //Spin intake. Right Bumper
     if (Controller1.ButtonR1.pressing()){
